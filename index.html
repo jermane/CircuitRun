@@ -1,0 +1,318 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Games- JavaScript Building Basics</title>
+
+<!-- for CreateJS and ZIMjs http://zimjs.com - free to modify - Dan Zen 2015 -->
+<!-- see http://zimjs.com/templates for more templates and meta tags -->
+
+<script>var zon = true; // true for comments from zim code</script>
+<script src="code/zim_1.4.4.js"></script>
+<script src="code/createjs-2015.05.21.min.js"></script>
+<script src="code/zim_1.4.4_min.js"></script>
+<!-- should use CDN links available from CreateJS and ZIM sites -->
+
+<style>
+	body {margin:0px; padding:0px; background-color:#000;}
+	#myCanvas {position:absolute; background-color:#100012;}
+</style>
+
+<script>
+
+					// SCALING
+
+var scaling = "fit";
+var width = 960;
+var height = 640;
+var frame = new zim.Frame(scaling, width, height);
+frame.on("ready", function() {
+	zog("ready from ZIM Frame");
+
+var stage = frame.stage;
+var stageW = frame.width;
+var stageH = frame.height;
+
+
+
+				//Load Pictures
+var imagePath = "images/";
+var manifest_1 = [
+					{id:"ground", src:"ground.png"},
+					{id:"jet", src:"jet.png"},
+					{id:"shadow", src:"shadow.png"},
+					{id:"pylon", src:"pylon.png"},
+					{id:"skyline", src:"skyline.png"},
+					{id:"title", src:"title.png"},
+					{id:"game_over", src:"game_over.png"},
+					{id: "explosion", src:"explosion.png"}
+				];
+
+
+var preload = new createjs.LoadQueue(false, imagePath);
+preload.loadManifest(manifest_1);
+
+
+preload.on("complete", game);
+
+//game(); // comment this out when you have preload going
+
+
+function game() {
+
+
+	//Scrolling background
+//	var ground_left= new createjs.Bitmap(preload.getResult("ground_1"));
+//	// zim.scale(ground_left,0.5);
+//	stage.addChildAt(ground_left,0);
+
+	var ground= new createjs.Bitmap(preload.getResult("ground"));
+	// zim.scale(Ground_right,0.9);
+
+	stage.addChildAt(ground,0);
+
+//	var scrollerSpeed = 3;
+//	var scroller = new zim.Scroller(ground_left, ground_right, scrollerSpeed, -1, false, 0);
+	//function(b1, b2, speed, direction, horizontal, gapFix)
+
+	// var scroller = new zim.Scroller(ground_left,Ground_right,scrollerSpeed,1,false,0.1);
+
+
+	var ground_right= new createjs.Bitmap(preload.getResult("ground_right"));
+
+
+
+					//Create Title
+	var title= new createjs.Bitmap(preload.getResult("title"));
+	stage.addChild(title);
+	zim.centerReg(title);
+	title.x = stageW/2;
+	title.y = 153;
+	zim.scale(title,0.1);
+	createjs.Tween.get(title)
+	.to({scaleX:.3,scaleY:.3}, 1000)
+	.to({scaleX:1,scaleY:1,}, 2000)
+	.to ({alpha:0},500)
+	.call(removeTitle);
+
+	function removeTitle(t) {
+		t.target.alpha = 0
+	}
+
+
+					//Create horizon
+
+	var horizon =  new createjs.Bitmap(preload.getResult("skyline"));
+	stage.addChildAt(horizon,2);
+
+
+					//Create Pylons
+	var pylons = new createjs.Container();
+	stage.addChild(pylons);
+
+
+				//Create Pylons
+	var pylon;
+	var pylonsTotal= 0;
+	var interval = setInterval(function() {
+
+		zog("test");
+		pylonsTotal++;
+		pylon =  new createjs.Bitmap(preload.getResult("pylon"));
+
+		pylon.x = zim.rand(stageW);
+		pylon.y = 227;
+		pylon.hit=false;
+		pylons.addChildAt(pylon,0);
+		pylon.regX = pylon.getBounds().width/2;
+		pylon.regY = pylon.getBounds().height;
+		zim.scale(pylon,.01);
+		createjs.Tween.get(pylon)
+		.to({scaleX:.3,scaleY:.3}, 2000)
+		.to({scaleX:.6,scaleY:.6, y:stageH + 10}, 3000)
+		// .to({y:stageH}, 3000)
+		.call(removePylon);
+		// y:stageH+500,
+	}, 1500);
+
+	function removePylon(t) {
+		t.target.x = -2000;
+		pylons.removeChild(t.target);
+	}
+
+
+				//Create Jet & Shadow
+	var jets = new createjs.Container;
+	var shadow = new createjs.Bitmap(preload.getResult("shadow"));
+	zim.scale(shadow,.6);
+	zim.centerReg(shadow);
+	jets.addChild(shadow);
+	shadow.alpha = .5;
+	var jet = new createjs.Bitmap(preload.getResult("jet"));
+	jets.addChild(jet);
+	zim.scale(jet,.6);
+	zim.centerReg(jet);
+	jet.x = stageW/2;
+	jet.y = stageH/1.1;
+	stage.addChild(jets);
+
+
+
+				//Jet Movement
+	var speed = 15;
+	var direction_x = 0;
+	var direction_y = 0;
+	window.addEventListener("keydown", function(e) {
+
+		if (e.keyCode == 37) {
+			direction_x = -1;
+			jet.rotation = -60;
+		} else if (e.keyCode == 39) {
+			direction_x = 1;
+			jet.rotation = 60;
+		}
+		if (e.keyCode == 38) {
+			direction_y = -1;
+		} else if (e.keyCode == 40) {
+			direction_y = 1;
+		}
+	});
+
+	window.addEventListener("keyup", function(e) {
+		direction_x = 0;
+		direction_y = 0;
+		jet.rotation = 0;
+
+	});
+
+	var movex = jet.x;
+	var movey = jet.x;
+
+	shadow.y = 580;
+	var dampX = new zim.Damp(movex,.1);
+	var dampShadow = new zim.Damp(shadow,.1);
+	var dampY = new zim.Damp(movey,.1);
+	var dampRotate = new zim.Damp(jet.rotation,.1);
+
+
+
+					//create plane
+	var plane = new zim.Rectangle(960,100, "#100012");
+	plane.alpha = 0.01;
+	stage.addChildAt(plane, 2)
+	plane.y = 540;
+
+
+
+					//Animation ticker
+	createjs.Ticker.framerate = 60;
+	var myTicker = createjs.Ticker.on("tick", animate);
+
+	function animate() {
+		// moving jet via direction in keypress
+		// jet.x += direction*speed;
+		movex += direction_x*speed;
+		movey += direction_y*speed;
+		shadow.x = movex;
+		shadow.x = dampX.convert(movex);
+		jet.x = dampX.convert(movex);
+		jet.y = dampY.convert(movey);
+
+		// do a hit test between jet and pylons
+		var pylon;
+		for (var i=0; i<pylons.numChildren; i++) {
+			pylon = pylons.getChildAt(i);
+			if (zim.hitTestReg(plane, pylon) ) {
+				zog("hitting");
+				pylon.hit = true;
+			}
+			if (pylon.hit == true){
+				if (zim.hitTestRect(pylon, jet)){
+					zog("hitting2");
+					jet.hit = true;
+					endGame();
+				}
+
+			}
+		}
+
+		stage.update();
+	};
+
+
+					//Game Over
+	var game_over= new createjs.Bitmap(preload.getResult("game_over"));
+	zim.centerReg(game_over);
+	game_over.x = stageW/2;
+	game_over.y = 153;
+	var label = new zim.Label();
+	var ending = new createjs.Container();
+	var button= new zim.Button(180,80,"RESTART","lightblue","blue");
+	zim.centerReg(button);
+	button.x=stageW/2;
+	button.y=400;
+	button.on("click", restart);
+	ending.addChild(button);
+	ending.addChild(game_over);
+
+
+					//Explosion SpriteSheet
+	var ExplodeSprite= new createjs.Bitmap(preload.getResult("explosion"));
+	var spriteSheet = new createjs.SpriteSheet({
+		framerate: 1,
+		"images": [ExplodeSprite],
+		"frames": {"regX":0, "height": 800, "count":104, "width": 800, "regY":0},
+		"animations":{
+			"explode": [0, 103, false]
+		}
+	});
+
+	var explosion = new createjs.Sprite(spriteSheet, "explode");
+
+	explosion.setBounds(0,0,800,800);
+	zim.scale(explosion,.6);
+	zim.centerReg(explosion);
+
+
+
+	createjs.Ticker.timingMode = createjs.Ticker.RAF;
+	createjs.Ticker.addEventListener("tick", stage);
+
+
+
+	function restart(){
+		  location.reload();
+	}
+
+	function endGame(){
+		zog("endGame");
+		createjs.Ticker.off("ticker",myTicker);
+		clearInterval(interval);
+
+//		zim.animate(scroller, {speed:0},2000);
+//		scroller.speed = 0;
+		explosion.x = jet.x;
+	 	explosion.y = jet.y;
+		jet.alpha = 0;
+		stage.addChild(explosion);
+		stage.removeChild(jets);
+		stage.addChild(ending);
+	}
+
+	// stage.removeChild(jet);
+
+	stage.update();
+	}
+
+});
+
+
+</script>
+
+
+</head>
+
+<body>
+<!-- canvas with id="myCanvas" is made by zim Frame -->
+</body>
+</html>
