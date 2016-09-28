@@ -105,7 +105,39 @@ function game() {
 	var skyline =  new createjs.Bitmap(preload.getResult("skyline"));
 	stage.addChildAt(skyline,2);
 
+	function movingGrnd() {
+		//create line container
 
+		var lines = new createjs.Container();
+		stage.addChild(lines);
+		var linesTotal = 0;
+
+		var drawHorizon = setInterval(function(){
+			linesTotal ++;
+			//draw lines
+			var	line = new createjs.Shape();
+			line.graphics.setStrokeStyle(5).beginStroke("#00d8f2").moveTo(0,216).lineTo(670,216);
+
+			//add lines to contianer
+			lines.addChildAt(line,0);
+			line.regX = 335;
+			line.x = 480;
+
+			//animate lines
+			createjs.Tween.get(line)
+			.to({scaleX:2, y:220},1543.75)
+			.to({y:stageH + 10},2456.25)
+			.call(removeLines);
+		},500);
+		//remove container
+		function removeLines(t){
+			t.target.x = -2000;
+			lines.removeChild(t.target);
+		}
+		//add container to stage
+
+	};
+	movingGrnd();
 					//Create Pylons
 	var pylons = new createjs.Container();
 	stage.addChild(pylons);
@@ -206,36 +238,7 @@ function game() {
 
 	};
 
-	function movingGrnd() {
-		//create line container
 
-		var lines = new createjs.Container();
-		stage.addChild(lines);
-		var linesTotal = 0;
-
-		var drawHorizon = setInterval(function(){
-			linesTotal ++;
-			//draw lines
-			var	line = new createjs.Shape();
-			line.graphics.setStrokeStyle(5).beginStroke("#00d8f2").moveTo(0,216).lineTo(960,216);
-
-			//add lines to contianer
-			lines.addChildAt(line,0);
-
-			//animate lines
-			createjs.Tween.get(line)
-			.to({y:stageH + 10},3000)
-			.call(removeLines);
-		},1500);
-		//remove container
-		function removeLines(t){
-			t.target.x = -2000;
-			lines.removeChild(t.target);
-		}
-		//add container to stage
-
-	};
-	movingGrnd();
 					//create plane
 	var plane = new zim.Rectangle(960,100, "#100012");
 	plane.alpha = 0.01;
